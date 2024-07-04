@@ -114,6 +114,9 @@ pub struct WorkspaceConfig {
     /// Permanent workspace application rules
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workspace_rules: Option<Vec<IdWithIdentifier>>,
+    /// Apply this monitor's window-based work area offset (default: true)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub apply_window_based_work_area_offset: Option<bool>,
 }
 
 impl From<&Workspace> for WorkspaceConfig {
@@ -196,6 +199,7 @@ impl From<&Workspace> for WorkspaceConfig {
             workspace_padding,
             initial_workspace_rules: initial_ws_rules,
             workspace_rules: ws_rules,
+            apply_window_based_work_area_offset: Some(value.apply_window_based_work_area_offset()),
         }
     }
 }
@@ -299,7 +303,7 @@ pub struct StaticConfig {
     /// Monitor and workspace configurations
     #[serde(skip_serializing_if = "Option::is_none")]
     pub monitors: Option<Vec<MonitorConfig>>,
-    /// Which Windows signal to use when hiding windows (default: minimize)
+    /// Which Windows signal to use when hiding windows (default: Cloak)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub window_hiding_behaviour: Option<HidingBehaviour>,
     /// Global work area (space used for tiling) offset (default: None)
@@ -366,11 +370,23 @@ impl StaticConfig {
     }
 
     pub fn deprecated(raw: &str) {
-        let deprecated = ["invisible_borders"];
+        let deprecated_options = ["invisible_borders"];
+        let deprecated_variants = vec![
+            ("Hide", "window_hiding_behaviour", "Cloak"),
+            ("Minimize", "window_hiding_behaviour", "Cloak"),
+        ];
 
-        for option in deprecated {
+        for option in deprecated_options {
             if raw.contains(option) {
                 println!(r#""{option}" is deprecated and can be removed"#);
+            }
+        }
+
+        for (variant, option, recommended) in deprecated_variants {
+            if raw.contains(option) && raw.contains(variant) {
+                println!(
+                    r#"The "{variant}" option for "{option}" is deprecated and can be removed or replaced with "{recommended}""#
+                );
             }
         }
     }
